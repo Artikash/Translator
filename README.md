@@ -1,5 +1,5 @@
 # Translator
-This code should be used with [Clipboard Inserter](https://addons.mozilla.org/en-US/firefox/addon/clipboard-inserter/).
+Easily translate text from [Clipboard Inserter](https://addons.mozilla.org/en-US/firefox/addon/clipboard-inserter/) using google translate.
 
 # Use
 
