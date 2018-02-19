@@ -1,0 +1,165 @@
+<html>
+
+<head>
+  <meta charset="UTF-8">
+
+  <style type="text/css">
+    body {
+      background-color: #202020;
+      color: #ffffff;
+      font-size: 1.5em;
+      font-weight: 400;
+      font-family: "";
+    }
+  </style>
+
+  <script>
+    //------------------------
+
+    //To change background color or text color, just replace the style values above with the hex values for the colors you want.
+    //To change font size, just change the em value to what works for you (the standard size is 1, I like it at 1.5).
+    //To change font weight (boldness), just edit the value above.  100 is quite thin, 400 is default, 900 is quite thick.  You may want it higher than default for Mincho fonts.
+
+    //To change the font itself, put the ENGLISH name of your font in between the quotation marks above (some JP font names are in Japanese, such as "�O�����؊G��").
+    //To find the English name of a given font, first install it, then open Firefox.
+    //Go to about:preferences#content in the address bar, then click on the 'Default font' drop-down menu.
+    //The "correct" name of your font will be listed here - just copy that down and paste it up above.
+
+    //Note that if you are fine with whatever font you have now then you can just leave the quotation marks above blank and the default font will be used.
+    //Your default is probably Gothic - if you want to try out a good Mincho font, try Aozora Mincho at http://www.freejapanesefont.com/aozora-mincho-download/
+    //For various other free Japanese fonts, visit http://www.freejapanesefont.com/
+    //For more font attribute information visit http://www.w3schools.com/css/css_font.asp
+
+    //------------------------
+
+    /**** Fun Stuff that you need to copy into your page ****/
+
+    const win = {
+      TKK: "NaN"
+    };
+
+    const updateTKK = () =>
+      new Promise(
+        resolve =>
+          Number(win.TKK.split(".")[0]) === Math.floor(Date.now() / 3600000)
+            ? resolve()
+            : fetch("https://translate.google.com")
+                .then(resp => resp.text())
+                .then(text => {
+                  const code = text.match(/TKK=(.*?)\(\)\)'\);/g);
+                  if (code) {
+                    eval(code[0]);
+                    /* eslint-disable no-undef */
+                    if (typeof TKK !== "undefined") {
+                      win.TKK = TKK;
+                    }
+                    /* eslint-enable no-undef */
+                  }
+                  resolve();
+                })
+      );
+
+    const translate = text =>
+      new Promise(resolve =>
+        updateTKK().then(() =>
+          fetch(
+            "https://translate.google.com/translate_a/single?client=t&dt=ld&dt=rm&dt=t" +
+              sM(text) +
+              "&q=" +
+              encodeURIComponent(text)
+          )
+            .then(resp => resp.json())
+            .then(resolve)
+        )
+      );
+
+    /**
+     * Last update: 2016/06/26
+     * https://translate.google.com/translate/releases/twsfe_w_20160620_RC00/r/js/desktop_module_main.js
+     *
+     * Everything between 'BEGIN' and 'END' was copied from the url above.
+     */
+
+    /* eslint-disable */
+    // BEGIN
+
+    function sM(a) {
+      var yr = null;
+      var wr = function(a) {
+          return function() {
+            return a;
+          };
+        },
+        xr = function(a, b) {
+          for (var c = 0; c < b.length - 2; c += 3) {
+            var d = b.charAt(c + 2),
+              d = "a" <= d ? d.charCodeAt(0) - 87 : Number(d),
+              d = "+" == b.charAt(c + 1) ? a >>> d : a << d;
+            a = "+" == b.charAt(c) ? (a + d) & 4294967295 : a ^ d;
+          }
+          return a;
+        };
+      var b;
+      if (null !== yr) b = yr;
+      else {
+        b = wr(String.fromCharCode(84));
+        var c = wr(String.fromCharCode(75));
+        b = [b(), b()];
+        b[1] = c();
+        b = (yr = win[b.join(c())] || "") || "";
+      }
+      var d = wr(String.fromCharCode(116)),
+        c = wr(String.fromCharCode(107)),
+        d = [d(), d()];
+      d[1] = c();
+      c = "&" + d.join("") + "=";
+      d = b.split(".");
+      b = Number(d[0]) || 0;
+      for (var e = [], f = 0, g = 0; g < a.length; g++) {
+        var l = a.charCodeAt(g);
+        128 > l
+          ? (e[f++] = l)
+          : (2048 > l
+              ? (e[f++] = (l >> 6) | 192)
+              : (55296 == (l & 64512) && g + 1 < a.length && 56320 == (a.charCodeAt(g + 1) & 64512)
+                  ? ((l = 65536 + ((l & 1023) << 10) + (a.charCodeAt(++g) & 1023)),
+                    (e[f++] = (l >> 18) | 240),
+                    (e[f++] = ((l >> 12) & 63) | 128))
+                  : (e[f++] = (l >> 12) | 224),
+                (e[f++] = ((l >> 6) & 63) | 128)),
+            (e[f++] = (l & 63) | 128));
+      }
+      a = b;
+      for (f = 0; f < e.length; f++) (a += e[f]), (a = xr(a, "+-a^+6"));
+      a = xr(a, "+-3^+b+-f");
+      a ^= Number(d[1]) || 0;
+      0 > a && (a = (a & 2147483647) + 2147483648);
+      a %= 1e6;
+      return c + (a.toString() + "." + (a ^ b));
+    }
+
+    // END
+    /* eslint-enable */
+
+    document.addEventListener("DOMNodeInserted", node => {
+      const b = document.body;
+      if (b.scrollTop - b.offsetHeight >= -b.clientHeight - b.scrollHeight + b.offsetHeight - 100)
+        window.scrollTo(0, document.body.scrollHeight);
+      node.originalTarget.addEventListener("dblclick", () =>
+        translate(node.originalTarget.innerHTML).then(
+          data => (b.appendChild(document.createElement("p")).textContent = data[0][0][0])
+        )
+      );
+    });
+
+    /**** End of the Fun Stuff ****/
+  </script>
+</head>
+
+
+<body>
+
+</body>
+
+
+</html>
