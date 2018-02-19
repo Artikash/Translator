@@ -10,7 +10,7 @@ Easily translate text from [Clipboard Inserter](https://addons.mozilla.org/en-US
 
 3. Insert text with Clipboard Inserter.
 
-4. Click the text to translate.
+4. Double click text to translate.
 
 # Credits
 
