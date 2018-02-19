@@ -70,7 +70,15 @@
           )
             .then(resp => resp.json())
             .then(resolve)
-        )
+        ).catch(() =>
+          fetch(
+            "https://crossorigin.me/https://translate.google.com/translate_a/single?client=t&dt=ld&dt=rm&dt=t" +
+            sM(text) +
+            "&q=" +
+            encodeURIComponent(text)
+          )
+            .then(resp => resp.json())
+            .then(resolve))
       );
 
     /**
@@ -148,7 +156,7 @@
       node.originalTarget.addEventListener("dblclick", () =>
         translate(node.originalTarget.innerHTML).then(
           data => (b.appendChild(document.createElement("p")).textContent = data[0][0][0])
-        )
+        ).catch(() => b.appendChild(document.createElement("p")).textContent = "Error")
       );
     });
 
