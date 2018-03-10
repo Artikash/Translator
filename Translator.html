@@ -71,7 +71,7 @@
             encodeURIComponent(text)
           )
             .then(resp => resp.json())
-            .then(resolve)
+            .then(data => resolve(data[0].filter(v => v[0]).map(v => v[0]).join(" ")))
         )
       );
 
@@ -149,11 +149,11 @@
       if (b.scrollTop - b.offsetHeight >= -b.clientHeight - b.scrollHeight + b.offsetHeight - 100)
         window.scrollTo(0, b.scrollHeight);
       if (node.tagName === "P")
-        translate(node.innerHTML).then(data =>
+        translate(node.innerHTML).then(translation =>
           window.autoTranslate
-            ? b.appendChild(document.createElement("div")).textContent = data[0][0][0]
+            ? b.appendChild(document.createElement("div")).textContent = translation
             : node.addEventListener("dblclick", () =>
-              b.appendChild(document.createElement("div")).textContent = data[0][0][0]
+              b.appendChild(document.createElement("div")).textContent = translation
             )
         );
     }).observe(b, { childList: true });
