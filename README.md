@@ -12,6 +12,8 @@ Easily translate text from [Clipboard Inserter](https://addons.mozilla.org/en-US
 
 4. Double click text to translate.
 
+5. Open developer tools (Ctrl-Shift-I) to enable automatic translation.
+
 # Credits
 
 [crossorigin.me](https://crossorigin.me/) lets me make cross origin requests to google.
