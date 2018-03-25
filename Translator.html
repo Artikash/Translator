@@ -36,14 +36,67 @@
   <script>
     /* Fun Stuff that you need to copy into your page */
 
-    const win = {
-      TKK: "NaN"
+    /**
+     * https://translate.google.com/translate/releases/twsfe_w_20160620_RC00/r/js/desktop_module_main.js
+     *
+     * Everything between 'BEGIN' and 'END' was reverse engineered from the url above.
+     */
+
+    // BEGIN
+
+    const translationKey = (text) => {
+      const obfuscate = (a, b) => {
+        for (var c = 0; c < b.length - 2; c += 3) {
+          var d = b.charAt(c + 2);
+          d = "a" <= d ? d.charCodeAt(0) - 87 : Number(d);
+          d = "+" === b.charAt(c + 1) ? a >>> d : a << d;
+          a = "+" === b.charAt(c) ? a + d : a ^ d;
+        }
+        return a;
+      };
+      let keyGenerationArray = [];
+      for (let i = 0, j = 0; j < text.length; j++) {
+        let k = text.charCodeAt(j);
+        if (k < 128) {
+          keyGenerationArray[i++] = k;
+        } else {
+          if (k < 2048) {
+            keyGenerationArray[i++] = k >> 6 | 0xC0;
+          } else {
+            if (0xD800 === (k & 0xFC00) && j + 1 < text.length && 0xDC00 === (text.charCodeAt(j + 1) & 0xFC00)) {
+              k = 0x10000 + ((k & 0x3FF) << 10) + (text.charCodeAt(++j) & 0x3FF);
+              keyGenerationArray[i++] = k >> 18 | 0xF0;
+              keyGenerationArray[i++] = k >> 12 & 0x3F | 0x80;
+            }
+            else {
+              keyGenerationArray[i++] = k >> 12 | 0xE0;
+            }
+            keyGenerationArray[i++] = k >> 6 & 0x3F | 0x80;
+          }
+          keyGenerationArray[i++] = k & 0x3F | 0x80;
+        }
+      }
+      const translationKeySeed = TKK.split(".").map(v => +v);
+      let keyGenerator = translationKeySeed[0];
+      for (let i = 0; i < keyGenerationArray.length; i++) {
+        keyGenerator += keyGenerationArray[i];
+        keyGenerator = obfuscate(keyGenerator, "+-a^+6");
+      }
+      keyGenerator = obfuscate(keyGenerator, "+-3^+b+-f");
+      keyGenerator ^= translationKeySeed[1];
+      if (keyGenerator < 0) {
+        keyGenerator = (keyGenerator & 0x7FFFFFFF) + 0x80000000;
+      }
+      keyGenerator %= 1e6;
+      return "&tk=" + keyGenerator + "." + (keyGenerator ^ translationKeySeed[0]);
     };
+
+    // END
 
     const updateTKK = () =>
       new Promise(
         resolve =>
-          Number(win.TKK.split(".")[0]) === Math.floor(Date.now() / 3600000)
+          Number(window.TKK && window.TKK.split(".")[0]) === Math.floor(Date.now() / 3600000)
             ? resolve()
             : fetch("https://crossorigin.me/https://translate.google.com")
               .then(resp => resp.text())
@@ -51,11 +104,6 @@
                 const code = text.match(/TKK=(.*?)\(\)\)'\);/g);
                 if (code) {
                   eval(code[0]);
-                  /* eslint-disable no-undef */
-                  if (typeof TKK !== "undefined") {
-                    win.TKK = TKK;
-                  }
-                  /* eslint-enable no-undef */
                 }
                 resolve();
               })
@@ -66,7 +114,7 @@
         updateTKK().then(() =>
           fetch(
             "https://crossorigin.me/https://translate.google.com/translate_a/single?client=t&dt=ld&dt=rm&dt=t" +
-            sM(text) +
+            translationKey(text) +
             "&q=" +
             encodeURIComponent(text)
           )
@@ -75,80 +123,14 @@
         )
       );
 
-    /**
-     * Last update: 2016/06/26
-     * https://translate.google.com/translate/releases/twsfe_w_20160620_RC00/r/js/desktop_module_main.js
-     *
-     * Everything between 'BEGIN' and 'END' was copied from the url above.
-     */
-
-    /* eslint-disable */
-    // BEGIN
-
-    function sM(a) {
-      var yr = null;
-      var wr = function (a) {
-        return function () {
-          return a;
-        };
-      },
-        xr = function (a, b) {
-          for (var c = 0; c < b.length - 2; c += 3) {
-            var d = b.charAt(c + 2),
-              d = "a" <= d ? d.charCodeAt(0) - 87 : Number(d),
-              d = "+" == b.charAt(c + 1) ? a >>> d : a << d;
-            a = "+" == b.charAt(c) ? (a + d) & 4294967295 : a ^ d;
-          }
-          return a;
-        };
-      var b;
-      if (null !== yr) b = yr;
-      else {
-        b = wr(String.fromCharCode(84));
-        var c = wr(String.fromCharCode(75));
-        b = [b(), b()];
-        b[1] = c();
-        b = (yr = win[b.join(c())] || "") || "";
-      }
-      var d = wr(String.fromCharCode(116)),
-        c = wr(String.fromCharCode(107)),
-        d = [d(), d()];
-      d[1] = c();
-      c = "&" + d.join("") + "=";
-      d = b.split(".");
-      b = Number(d[0]) || 0;
-      for (var e = [], f = 0, g = 0; g < a.length; g++) {
-        var l = a.charCodeAt(g);
-        128 > l
-          ? (e[f++] = l)
-          : (2048 > l
-            ? (e[f++] = (l >> 6) | 192)
-            : (55296 == (l & 64512) && g + 1 < a.length && 56320 == (a.charCodeAt(g + 1) & 64512)
-              ? ((l = 65536 + ((l & 1023) << 10) + (a.charCodeAt(++g) & 1023)),
-                (e[f++] = (l >> 18) | 240),
-                (e[f++] = ((l >> 12) & 63) | 128))
-              : (e[f++] = (l >> 12) | 224),
-              (e[f++] = ((l >> 6) & 63) | 128)),
-            (e[f++] = (l & 63) | 128));
-      }
-      a = b;
-      for (f = 0; f < e.length; f++) (a += e[f]), (a = xr(a, "+-a^+6"));
-      a = xr(a, "+-3^+b+-f");
-      a ^= Number(d[1]) || 0;
-      0 > a && (a = (a & 2147483647) + 2147483648);
-      a %= 1e6;
-      return c + (a.toString() + "." + (a ^ b));
-    }
-
-    // END
-    /* eslint-enable */
 
     const b = document.body;
     new MutationObserver(mutations => {
       const node = mutations[0].addedNodes[0];
-      if (b.scrollTop - b.offsetHeight >= -b.clientHeight - b.scrollHeight + b.offsetHeight - 100)
+      if (b.scrollTop - b.offsetHeight >= -b.clientHeight - b.scrollHeight + b.offsetHeight - 100) {
         window.scrollTo(0, b.scrollHeight);
-      if (node.tagName === "P")
+      }
+      if (node.tagName === "P") {
         translate(node.innerHTML).then(translation =>
           window.autoTranslate
             ? b.appendChild(document.createElement("div")).textContent = translation
@@ -156,7 +138,10 @@
               b.appendChild(document.createElement("div")).textContent = translation
             )
         );
+      }
     }).observe(b, { childList: true });
+
+    Object.defineProperty(window, "toggleAutoTranslate", { get: () => window.autoTranslate = !window.autoTranslate  });
 
   /* End of the Fun Stuff */
   </script>
