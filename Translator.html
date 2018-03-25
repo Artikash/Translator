@@ -45,14 +45,14 @@
     // BEGIN
 
     const translationKey = (text) => {
-      const obfuscate = (a, b) => {
-        for (var c = 0; c < b.length - 2; c += 3) {
-          var d = b.charAt(c + 2);
-          d = "a" <= d ? d.charCodeAt(0) - 87 : Number(d);
-          d = "+" === b.charAt(c + 1) ? a >>> d : a << d;
-          a = "+" === b.charAt(c) ? a + d : a ^ d;
+      const obfuscate = (keyGenerator, obfuscationArray) => {
+        for (let i = 0; i < obfuscationArray.length - 2; i += 3) {
+          let j = obfuscationArray[i + 2];
+          j = "a" <= j ? j.charCodeAt(0) - 87 : Number(j);
+          j = "+" === obfuscationArray[i + 1] ? keyGenerator >>> j : keyGenerator << j;
+          keyGenerator = "+" === obfuscationArray[i] ? keyGenerator + j : keyGenerator ^ j;
         }
-        return a;
+        return keyGenerator;
       };
       let keyGenerationArray = [];
       for (let i = 0, j = 0; j < text.length; j++) {
@@ -80,9 +80,9 @@
       let keyGenerator = translationKeySeed[0];
       for (let i = 0; i < keyGenerationArray.length; i++) {
         keyGenerator += keyGenerationArray[i];
-        keyGenerator = obfuscate(keyGenerator, "+-a^+6");
+        keyGenerator = obfuscate(keyGenerator, ["+", "-", "a", "^", "+", "6"]);
       }
-      keyGenerator = obfuscate(keyGenerator, "+-3^+b+-f");
+      keyGenerator = obfuscate(keyGenerator, ["+", "-", "3", "^", "+", "b", "+", "-", "f"]);
       keyGenerator ^= translationKeySeed[1];
       if (keyGenerator < 0) {
         keyGenerator = (keyGenerator & 0x7FFFFFFF) + 0x80000000;
@@ -141,7 +141,7 @@
       }
     }).observe(b, { childList: true });
 
-    Object.defineProperty(window, "toggleAutoTranslate", { get: () => window.autoTranslate = !window.autoTranslate  });
+    Object.defineProperty(window, "toggleAutoTranslate", { get: () => window.autoTranslate = !window.autoTranslate });
 
   /* End of the Fun Stuff */
   </script>
