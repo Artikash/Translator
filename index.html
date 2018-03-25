@@ -46,43 +46,44 @@
 
     const translationKey = (text) => {
       const obfuscate = (keyGenerator, obfuscationArray) => {
-        for (let i = 0; i < obfuscationArray.length - 2; i += 3) {
-          let j = obfuscationArray[i + 2];
-          j = "a" <= j ? j.charCodeAt(0) - 87 : Number(j);
-          j = "+" === obfuscationArray[i + 1] ? keyGenerator >>> j : keyGenerator << j;
-          keyGenerator = "+" === obfuscationArray[i] ? keyGenerator + j : keyGenerator ^ j;
+        for (let i = 0; i < obfuscationArray.length; ++i) {
+          if (i % 2 === 0) {
+            keyGenerator += keyGenerator << obfuscationArray[i];
+          } else {
+            keyGenerator ^= keyGenerator >>> obfuscationArray[i];
+          }
         }
         return keyGenerator;
       };
       let keyGenerationArray = [];
-      for (let i = 0, j = 0; j < text.length; j++) {
-        let k = text.charCodeAt(j);
-        if (k < 128) {
-          keyGenerationArray[i++] = k;
+      for (let i = 0; i < text.length; ++i) {
+        let charCode = text.codePointAt(i);
+        if (charCode < 128) {
+          keyGenerationArray.push(charCode);
         } else {
-          if (k < 2048) {
-            keyGenerationArray[i++] = k >> 6 | 0xC0;
+          if (charCode < 2048) {
+            keyGenerationArray.push(charCode >> 6 | 0b11000000);
           } else {
-            if (0xD800 === (k & 0xFC00) && j + 1 < text.length && 0xDC00 === (text.charCodeAt(j + 1) & 0xFC00)) {
-              k = 0x10000 + ((k & 0x3FF) << 10) + (text.charCodeAt(++j) & 0x3FF);
-              keyGenerationArray[i++] = k >> 18 | 0xF0;
-              keyGenerationArray[i++] = k >> 12 & 0x3F | 0x80;
+            if (charCode < 65536) {
+              keyGenerationArray.push(charCode >> 12 | 0b11100000);
             }
             else {
-              keyGenerationArray[i++] = k >> 12 | 0xE0;
+              ++i; // Because UTF-16
+              keyGenerationArray.push(charCode >> 18 | 0b11110000);
+              keyGenerationArray.push(charCode >> 12 & 0b111111 | 0b10000000);
             }
-            keyGenerationArray[i++] = k >> 6 & 0x3F | 0x80;
+            keyGenerationArray.push(charCode >> 6 & 0b111111 | 0b10000000);
           }
-          keyGenerationArray[i++] = k & 0x3F | 0x80;
+          keyGenerationArray.push(charCode & 0b111111 | 0b10000000);
         }
       }
-      const translationKeySeed = TKK.split(".").map(v => +v);
+      const translationKeySeed = window.TKK.split(".").map(v => +v);
       let keyGenerator = translationKeySeed[0];
-      for (let i = 0; i < keyGenerationArray.length; i++) {
+      for (let i = 0; i < keyGenerationArray.length; ++i) {
         keyGenerator += keyGenerationArray[i];
-        keyGenerator = obfuscate(keyGenerator, ["+", "-", "a", "^", "+", "6"]);
+        keyGenerator = obfuscate(keyGenerator, [10, 6]);
       }
-      keyGenerator = obfuscate(keyGenerator, ["+", "-", "3", "^", "+", "b", "+", "-", "f"]);
+      keyGenerator = obfuscate(keyGenerator, [3, 11, 15]);
       keyGenerator ^= translationKeySeed[1];
       if (keyGenerator < 0) {
         keyGenerator = (keyGenerator & 0x7FFFFFFF) + 0x80000000;
@@ -96,7 +97,7 @@
     const updateTKK = () =>
       new Promise(
         resolve =>
-          Number(window.TKK && window.TKK.split(".")[0]) === Math.floor(Date.now() / 3600000)
+          window.TKK && +window.TKK.split(".")[0] === Math.floor(Date.now() / 3600000)
             ? resolve()
             : fetch("https://crossorigin.me/https://translate.google.com")
               .then(resp => resp.text())
@@ -127,7 +128,7 @@
     const b = document.body;
     new MutationObserver(mutations => {
       const node = mutations[0].addedNodes[0];
-      if (b.scrollTop - b.offsetHeight >= -b.clientHeight - b.scrollHeight + b.offsetHeight - 100) {
+      if (b.scrollTop - b.offsetHeight >= -b.clientHeight - b.scrollHeight + b.offsetHeight - 200) {
         window.scrollTo(0, b.scrollHeight);
       }
       if (node.tagName === "P") {
