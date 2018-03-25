@@ -44,83 +44,88 @@
 
     // BEGIN
 
-    const translationKey = (text) => {
-      const obfuscate = (keyGenerator, obfuscationArray) => {
-        for (let i = 0; i < obfuscationArray.length; ++i) {
-          if (i % 2 === 0) {
-            keyGenerator += keyGenerator << obfuscationArray[i];
-          } else {
-            keyGenerator ^= keyGenerator >>> obfuscationArray[i];
-          }
-        }
-        return keyGenerator;
-      };
-      let keyGenerationArray = [];
-      for (let i = 0; i < text.length; ++i) {
-        let charCode = text.codePointAt(i);
+    const textToIntArray = (text = "") => {
+      const ret = [];
+      const charCodeArray = Array.from(text).map(char => char.codePointAt(0));
+      for (let i = 0; i < charCodeArray.length; ++i) {
+        let charCode = charCodeArray[i];
         if (charCode < 128) {
-          keyGenerationArray.push(charCode);
+          ret.push(charCode);
         } else {
           if (charCode < 2048) {
-            keyGenerationArray.push(charCode >> 6 | 0b11000000);
+            ret.push(charCode >> 6 | 0b11000000);
           } else {
             if (charCode < 65536) {
-              keyGenerationArray.push(charCode >> 12 | 0b11100000);
+              ret.push(charCode >> 12 | 0b11100000);
             }
             else {
-              ++i; // Because UTF-16
-              keyGenerationArray.push(charCode >> 18 | 0b11110000);
-              keyGenerationArray.push(charCode >> 12 & 0b111111 | 0b10000000);
+              ret.push(charCode >> 18 | 0b11110000);
+              ret.push(charCode >> 12 & 0b111111 | 0b10000000);
             }
-            keyGenerationArray.push(charCode >> 6 & 0b111111 | 0b10000000);
+            ret.push(charCode >> 6 & 0b111111 | 0b10000000);
           }
-          keyGenerationArray.push(charCode & 0b111111 | 0b10000000);
+          ret.push(charCode & 0b111111 | 0b10000000);
         }
       }
+      return ret;
+    }
+
+    const obfuscateKey = (keyGenerator = 0, obfuscationArray = [0]) => {
+      for (let i = 0; i < obfuscationArray.length; ++i) {
+        if (i % 2 === 0) {
+          keyGenerator += keyGenerator << obfuscationArray[i];
+        } else {
+          keyGenerator ^= keyGenerator >>> obfuscationArray[i];
+        }
+      }
+      return keyGenerator;
+    };
+
+    const translationKey = (text = "") => {
+      const keyGenerationArray = textToIntArray(text);
       const translationKeySeed = window.TKK.split(".").map(v => +v);
       let keyGenerator = translationKeySeed[0];
       for (let i = 0; i < keyGenerationArray.length; ++i) {
         keyGenerator += keyGenerationArray[i];
-        keyGenerator = obfuscate(keyGenerator, [10, 6]);
+        keyGenerator = obfuscateKey(keyGenerator, [10, 6]);
       }
-      keyGenerator = obfuscate(keyGenerator, [3, 11, 15]);
+      keyGenerator = obfuscateKey(keyGenerator, [3, 11, 15]);
       keyGenerator ^= translationKeySeed[1];
       if (keyGenerator < 0) {
         keyGenerator = (keyGenerator & 0x7FFFFFFF) + 0x80000000;
       }
       keyGenerator %= 1e6;
-      return "&tk=" + keyGenerator + "." + (keyGenerator ^ translationKeySeed[0]);
+      return keyGenerator + "." + (keyGenerator ^ translationKeySeed[0]);
     };
 
     // END
 
     const updateTKK = () =>
-      new Promise(
-        resolve =>
-          window.TKK && +window.TKK.split(".")[0] === Math.floor(Date.now() / 3600000)
-            ? resolve()
-            : fetch("https://crossorigin.me/https://translate.google.com")
-              .then(resp => resp.text())
-              .then(text => {
-                const code = text.match(/TKK=(.*?)\(\)\)'\);/g);
-                if (code) {
-                  eval(code[0]);
-                }
-                resolve();
-              })
+      new Promise(resolve =>
+        window.TKK && +window.TKK.split(".")[0] === Math.floor(Date.now() / 3600000)
+          ? resolve()
+          : fetch("https://crossorigin.me/https://translate.google.com")
+            .then(resp => resp.text())
+            .then(text => eval(text.match(/TKK=(.*?)\(\)\)'\);/g)[0]))
+            .then(resolve)
+            .catch(resolve)
       );
 
-    const translate = text =>
+    const processGoogleTranslateData = data => data[0].filter(v => v[0]).map(v => v[0]).join(" ");
+
+    const translate = (text = "") =>
       new Promise(resolve =>
         updateTKK().then(() =>
           fetch(
-            "https://crossorigin.me/https://translate.google.com/translate_a/single?client=t&dt=ld&dt=rm&dt=t" +
+            "https://crossorigin.me/https://translate.google.com/translate_a/single?client=t&dt=ld&dt=rm&dt=t&tk=" +
             translationKey(text) +
             "&q=" +
             encodeURIComponent(text)
           )
             .then(resp => resp.json())
-            .then(data => resolve(data[0].filter(v => v[0]).map(v => v[0]).join(" ")))
+            .then(processGoogleTranslateData)
+            .then(resolve)
+            .catch(resolve)
         )
       );
 
