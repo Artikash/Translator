@@ -10,7 +10,7 @@ Easily translate text from [Clipboard Inserter](https://addons.mozilla.org/en-US
 
 3. Double click text to translate.
 
-4. Open developer tools (Ctrl-Shift-I) and enter ```ToggleAutoTranslate``` to enable automatic translation.
+4. Open developer tools (Ctrl-Shift-I) and enter ```ToggleAutoTranslate``` to toggle automatic translation.
 
 # Credits
 
