@@ -4,15 +4,13 @@ Easily translate text from [Clipboard Inserter](https://addons.mozilla.org/en-US
 
 # Use
 
-1. Download the html file.
+1. Go to website (or download and open the html file).
 
-2. Open the html file.
+2. Insert text with Clipboard Inserter.
 
-3. Insert text with Clipboard Inserter.
+3. Double click text to translate.
 
-4. Double click text to translate.
-
-5. Open developer tools (Ctrl-Shift-I) and enter ```ToggleAutoTranslate``` to enable automatic translation.
+4. Open developer tools (Ctrl-Shift-I) and enter ```ToggleAutoTranslate``` to enable automatic translation.
 
 # Credits
 
