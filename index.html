@@ -36,6 +36,10 @@
   <script>
     /* Fun Stuff that you need to copy into your page */
 
+    let autoTranslate = false;
+    Object.defineProperty(window, "ToggleAutoTranslate", { get: () => autoTranslate = !autoTranslate });
+    let proxy = "https://crossorigin.me";
+
     /**
      * https://translate.google.com/translate/releases/twsfe_w_20160620_RC00/r/js/desktop_module_main.js
      *
@@ -104,7 +108,7 @@
       new Promise(resolve =>
         window.TKK && +window.TKK.split(".")[0] === Math.floor(Date.now() / 3600000)
           ? resolve()
-          : fetch("https://crossorigin.me/https://translate.google.com")
+          : fetch(proxy + "/https://translate.google.com")
             .then(resp => resp.text())
             .then(text => eval(text.match(/TKK=(.*?)\(\)\)'\);/g)[0]))
             .then(resolve)
@@ -117,7 +121,8 @@
       new Promise(resolve =>
         updateTKK().then(() =>
           fetch(
-            "https://crossorigin.me/https://translate.google.com/translate_a/single?client=t&dt=ld&dt=rm&dt=t&tk=" +
+            proxy +
+            "/https://translate.google.com/translate_a/single?client=t&dt=ld&dt=rm&dt=t&tk=" +
             translationKey(text) +
             "&q=" +
             encodeURIComponent(text)
@@ -138,7 +143,7 @@
       }
       if (node.tagName === "P") {
         translate(node.innerHTML).then(translation =>
-          window.autoTranslate
+          autoTranslate
             ? b.appendChild(document.createElement("div")).textContent = translation
             : node.addEventListener("dblclick", () =>
               b.appendChild(document.createElement("div")).textContent = translation
@@ -146,8 +151,6 @@
         );
       }
     }).observe(b, { childList: true });
-
-    Object.defineProperty(window, "ToggleAutoTranslate", { get: () => window.autoTranslate = !window.autoTranslate });
 
   /* End of the Fun Stuff */
   </script>
